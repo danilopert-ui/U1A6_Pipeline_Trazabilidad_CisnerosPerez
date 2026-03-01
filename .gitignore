@@ -1,0 +1,17 @@
+# Windows / VSCode
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# (Opcional) si generas logs temporales
+*.log
