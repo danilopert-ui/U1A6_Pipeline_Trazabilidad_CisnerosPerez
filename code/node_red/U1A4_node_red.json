@@ -1,0 +1,278 @@
+[
+    {
+        "id": "1c60f855b0a108cf",
+        "type": "tab",
+        "label": "U1A4 Serial -> CSV",
+        "disabled": true,
+        "info": ""
+    },
+    {
+        "id": "cc60d23f71ac0584",
+        "type": "serial in",
+        "z": "1c60f855b0a108cf",
+        "name": "ESP32 Serial In",
+        "serial": "35e0f2a8b1b54496",
+        "x": 150,
+        "y": 220,
+        "wires": [
+            [
+                "26b63c4d2fdc0745",
+                "807e1e69ec6e5d9c"
+            ]
+        ]
+    },
+    {
+        "id": "26b63c4d2fdc0745",
+        "type": "function",
+        "z": "1c60f855b0a108cf",
+        "name": "Parse CSV (t_ms,s)",
+        "func": "let line = (msg.payload || \"\").toString().trim();\nif (!line) return null;\n\n// Espera: t_ms,s\nlet parts = line.split(',');\nif (parts.length < 2) return null;\n\nlet t = Number(parts[0]);\nlet s = Number(parts[1]);\n\nif (!Number.isFinite(t) || !Number.isFinite(s)) return null;\n\nmsg.t_ms = t;\nmsg.s = s;\nmsg.payload = { t_ms: t, s: s };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 390,
+        "y": 220,
+        "wires": [
+            [
+                "f61ceb346cafa4c4"
+            ]
+        ]
+    },
+    {
+        "id": "f61ceb346cafa4c4",
+        "type": "function",
+        "z": "1c60f855b0a108cf",
+        "name": "Integridad + Contador (drop dup/ooo)",
+        "func": "let last = flow.get('last') ?? -1;\nlet ok = flow.get('ok') ?? 0;\nlet total = flow.get('total') ?? 0;\nlet dup = flow.get('dup') ?? 0;\nlet ooo = flow.get('ooo') ?? 0;\n\ntotal += 1;\n\nif (msg.t_ms === last) {\n  dup += 1;\n  flow.set('dup', dup);\n  flow.set('total', total);\n  return null; // descartar duplicado\n}\n\nif (msg.t_ms < last) {\n  ooo += 1;\n  flow.set('ooo', ooo);\n  flow.set('total', total);\n  return null; // descartar fuera de orden\n}\n\nflow.set('last', msg.t_ms);\nok += 1;\nflow.set('ok', ok);\nflow.set('total', total);\n\nmsg.meta = { ok, total, dup, ooo };\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 430,
+        "y": 300,
+        "wires": [
+            [
+                "969a0484e3b39f38",
+                "417b727ab00ffc16",
+                "96d29917a87f9df7"
+            ]
+        ]
+    },
+    {
+        "id": "969a0484e3b39f38",
+        "type": "csv",
+        "z": "1c60f855b0a108cf",
+        "name": "To CSV row",
+        "sep": ",",
+        "hdrin": false,
+        "hdrout": false,
+        "multi": "one",
+        "ret": "\\n",
+        "temp": "t_ms,s",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": false,
+        "include_null_values": false,
+        "x": 700,
+        "y": 200,
+        "wires": [
+            [
+                "ecac4ef86925fb42"
+            ]
+        ]
+    },
+    {
+        "id": "ecac4ef86925fb42",
+        "type": "file",
+        "z": "1c60f855b0a108cf",
+        "name": "Append CSV",
+        "filename": "C:\\Users\\Angel Daniel\\OneDrive\\Documentos\\CiberFisica\\Actividades\\U1A4_EJERCICIO_DE_APLICACION\\telemetria.csv",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 930,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2bc64fd9dbafa8ed",
+        "type": "inject",
+        "z": "1c60f855b0a108cf",
+        "name": "Init (header + reset)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.5,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 180,
+        "y": 90,
+        "wires": [
+            [
+                "bd5b80ab1d03f6f6"
+            ]
+        ]
+    },
+    {
+        "id": "bd5b80ab1d03f6f6",
+        "type": "function",
+        "z": "1c60f855b0a108cf",
+        "name": "Reset + Header",
+        "func": "flow.set('ok', 0);\nflow.set('total', 0);\nflow.set('dup', 0);\nflow.set('ooo', 0);\nflow.set('last', -1);\n\nmsg.payload = \"t_ms,s\\n\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 420,
+        "y": 90,
+        "wires": [
+            [
+                "b240a87d7749a8e7"
+            ]
+        ]
+    },
+    {
+        "id": "b240a87d7749a8e7",
+        "type": "file",
+        "z": "1c60f855b0a108cf",
+        "name": "Overwrite CSV (header)",
+        "filename": "C:\\\\Users\\\\Public\\\\telemetria.csv",
+        "filenameType": "str",
+        "appendNewline": false,
+        "createDir": false,
+        "overwriteFile": "true",
+        "encoding": "none",
+        "x": 700,
+        "y": 90,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "417b727ab00ffc16",
+        "type": "function",
+        "z": "1c60f855b0a108cf",
+        "name": "Chart payload",
+        "func": "msg.payload = msg.s;\nmsg.topic = \"sensor\";\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 700,
+        "y": 320,
+        "wires": [
+            [
+                "f1f6944d9cca9ffa"
+            ]
+        ]
+    },
+    {
+        "id": "96d29917a87f9df7",
+        "type": "ui_text",
+        "z": "1c60f855b0a108cf",
+        "group": "ui_group_u1a4",
+        "order": 1,
+        "width": 6,
+        "height": 1,
+        "name": "Contador/Integridad",
+        "label": "Estado",
+        "format": "OK: {{msg.meta.ok}} | Total: {{msg.meta.total}} | Dup: {{msg.meta.dup}} | OOO: {{msg.meta.ooo}}",
+        "layout": "row-spread",
+        "x": 720,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "f1f6944d9cca9ffa",
+        "type": "ui_chart",
+        "z": "1c60f855b0a108cf",
+        "name": "Sensor",
+        "group": "ui_group_u1a4",
+        "order": 2,
+        "width": 6,
+        "height": 4,
+        "label": "Sensor (ADC 0-4095)",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "4095",
+        "removeOlder": "30",
+        "removeOlderPoints": "",
+        "removeOlderUnit": "60",
+        "cutout": 0,
+        "useOneColor": false,
+        "outputs": 1,
+        "x": 930,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "807e1e69ec6e5d9c",
+        "type": "debug",
+        "z": "1c60f855b0a108cf",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 380,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "35e0f2a8b1b54496",
+        "type": "serial-port",
+        "name": "",
+        "serialport": "COM10",
+        "serialbaud": "115200",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "false",
+        "responsetimeout": "10000"
+    },
+    {
+        "id": "ui_group_u1a4",
+        "type": "ui_group",
+        "name": "Telemetria",
+        "tab": "ui_tab_u1a4",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "ui_tab_u1a4",
+        "type": "ui_tab",
+        "name": "U1A4 Dashboard",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "38a16c0c48fa13b7",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-serialport": "2.0.3",
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
