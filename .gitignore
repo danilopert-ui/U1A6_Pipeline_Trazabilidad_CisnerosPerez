@@ -15,3 +15,5 @@ __pycache__/
 
 # (Opcional) si generas logs temporales
 *.log
+
+.venv/
