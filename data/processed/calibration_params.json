@@ -1,0 +1,21 @@
+{
+  "source": "U1A5_Cisneros_Daniel.ipynb (captura NEGRO/BLANCO y umbral mid-point)",
+  "derived_from": "data/raw/U1A6_sample.csv (última calibración activa)",
+  "assumptions": [
+    "threshold = (black + white)/2",
+    "white estimado como mediana de muestras con norm≈1 en el último segmento",
+    "black derivado a partir del threshold y white"
+  ],
+  "channels": {
+    "s1": {
+      "black_adc": 161.0,
+      "white_adc": 0.0,
+      "threshold_adc": 80.5
+    },
+    "s2": {
+      "black_adc": 123.0,
+      "white_adc": 0.0,
+      "threshold_adc": 61.5
+    }
+  }
+}
